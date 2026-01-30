@@ -9,73 +9,103 @@
     <style>
         body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
         
-        .char-btn { font-size: 30px; margin: 5px; padding: 10px; border: 2px solid #ddd; background: white; border-radius: 12px; cursor: pointer; width: 60px; }
-        .char-btn.disabled { opacity: 0.1; cursor: not-allowed; }
-        .char-btn.selected { border-color: #ff4757; background: #ffeae6; }
+        /* 캐릭터 버튼 스타일 */
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
+        .char-btn { 
+            font-size: 35px; height: 80px; 
+            border: 2px solid #ddd; background: white; border-radius: 15px; 
+            cursor: pointer; transition: 0.2s; box-shadow: 0 4px #ccc;
+        }
+        .char-btn:active { box-shadow: 0 0 #ccc; transform: translateY(4px); background: #fff5f5; }
         
+        /* 이름 입력 팝업창 */
+        #nameModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; padding: 25px; border-radius: 20px; width: 80%; max-width: 300px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+        }
+        #modalCharIcon { font-size: 50px; display: block; margin-bottom: 10px; }
+        #nameInput { 
+            font-size: 18px; padding: 10px; width: 80%; margin-bottom: 15px; 
+            border: 2px solid #333; border-radius: 8px; text-align: center; 
+        }
+        .confirm-btn {
+            background: #ff4757; color: white; border: none; padding: 12px 30px; 
+            font-size: 18px; border-radius: 10px; cursor: pointer; width: 100%;
+        }
+
         #play { display: none; }
         
-        .dice-btn { width: 140px; height: 140px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 10px; transition: 0.1s; }
+        /* 게임 화면 스타일 */
+        .dice-btn { width: 140px; height: 140px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 30px; }
         .dice-btn:active { box-shadow: 0 2px #d63031; transform: translateY(4px); }
         
-        #penaltyBox { min-height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        #penaltyBox { min-height: 80px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 30px; }
         
+        /* 황금열쇠 보관함 */
         #goldenKeyStorage { 
             display: none; margin-top: 20px; padding: 15px; 
             background: #fff9c4; border: 3px dashed gold; border-radius: 15px; 
             box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
             animation: pop 0.3s ease-out;
         }
-        .storage-title { color: #f39c12; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
-        .key-content { font-size: 18px; font-weight: bold; color: #333; margin: 10px 0; }
-        .use-btn { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; }
-        
+        .use-btn { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; margin-top: 10px; }
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
     <div id="login">
-        <h3>🍷 캐릭터 선택 (중복 불가) 🍷</h3>
-        <input id="nameInput" type="text" placeholder="이름 입력" maxlength="4" style="padding:15px; width:80%; font-size:16px; border-radius:10px; border:1px solid #ccc; margin-bottom:15px;"><br>
-        <div id="charList">
-            <button class="char-btn" onclick="selectChar(this, '🍺')">🍺</button>
-            <button class="char-btn" onclick="selectChar(this, '🍶')">🍶</button>
-            <button class="char-btn" onclick="selectChar(this, '🍷')">🍷</button>
-            <button class="char-btn" onclick="selectChar(this, '🍹')">🍹</button>
-            <button class="char-btn" onclick="selectChar(this, '🔥')">🔥</button>
-            <button class="char-btn" onclick="selectChar(this, '🤢')">🤢</button>
-            <button class="char-btn" onclick="selectChar(this, '😎')">😎</button>
+        <h2 style="margin-bottom: 20px;">내 캐릭터 고르기</h2>
+        <p style="color:#666; font-size:14px; margin-bottom:30px;">마음에 드는 걸 누르고 이름을 입력하세요!</p>
+        
+        <div class="char-grid">
+            <button class="char-btn" onclick="openNameModal('🍺')">🍺</button>
+            <button class="char-btn" onclick="openNameModal('🍶')">🍶</button>
+            <button class="char-btn" onclick="openNameModal('🍷')">🍷</button>
+            <button class="char-btn" onclick="openNameModal('🍹')">🍹</button>
+            <button class="char-btn" onclick="openNameModal('🔥')">🔥</button>
+            <button class="char-btn" onclick="openNameModal('🤢')">🤢</button>
+            <button class="char-btn" onclick="openNameModal('😎')">😎</button>
+            <button class="char-btn" onclick="openNameModal('👻')">👻</button>
+            <button class="char-btn" onclick="openNameModal('💩')">💩</button>
         </div>
-        <button onclick="join()" style="margin-top:20px; padding:15px 40px; font-size:18px; background: #2d3436; color:white; border:none; border-radius:10px;">게임 입장</button>
+    </div>
+
+    <div id="nameModal">
+        <div class="modal-content">
+            <span id="modalCharIcon">🍺</span>
+            <h3>이름을 알려주세요!</h3>
+            <input type="text" id="nameInput" placeholder="예: 바이민" maxlength="4">
+            <button class="confirm-btn" onclick="joinGame()">입장하기</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">취소</button>
+        </div>
     </div>
 
     <div id="play">
         <h2 id="myInfo" style="margin: 10px 0;"></h2>
         
         <div id="goldenKeyStorage">
-            <div class="storage-title">🔑 보유 중인 황금열쇠</div>
-            <div id="storageText" class="key-content">내용</div>
+            <div style="color: #f39c12; font-weight: bold; font-size: 14px;">🔑 보유 중인 황금열쇠</div>
+            <div id="storageText" style="font-size: 20px; font-weight: bold; margin: 10px 0;">내용</div>
             <button class="use-btn" onclick="useKey()">사용하기 (삭제)</button>
         </div>
 
         <button class="dice-btn" onclick="roll()">🎲</button>
-        <h1 id="diceNum" style="margin: 10px 0;">?</h1>
+        <h1 id="diceNum" style="margin: 10px 0; color:#ff4757;">?</h1>
         
         <div id="penaltyBox">
-            <p id="penaltyMsg" style="font-size:20px; font-weight:bold; color:#ff4757; margin:0;">주사위를 굴려주세요!</p>
+            <p id="penaltyMsg" style="font-size:22px; font-weight:bold; color:#ff4757; margin:0;">주사위를 굴려주세요!</p>
         </div>
     </div>
 
     <script>
-        // [필수] 여기에 본인의 파이어베이스 주소를 꼭 넣어주세요!
+        // [필수] 본인의 파이어베이스 주소를 여기에 붙여넣으세요!
         const firebaseConfig = { databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/" };
         
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch(e) {
-            alert("파이어베이스 주소가 설정되지 않았습니다! 코드를 확인해주세요.");
-        }
-        
+        try { firebase.initializeApp(firebaseConfig); } catch(e) {}
         const db = firebase.database();
 
         const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔",
@@ -86,30 +116,33 @@
 
         let selectedChar = "", myId = "", currentPos = 0;
 
+        // [변경됨] 중복 체크 로직 삭제함. 오직 '게임 초기화' 여부만 감시합니다.
         db.ref('players').on('value', (snap) => {
-            const players = snap.val() || {}; // [수정됨] 데이터가 없어도 오류 안 나게 처리
-            document.querySelectorAll('.char-btn').forEach(btn => {
-                btn.classList.remove('disabled'); btn.disabled = false;
-                for(let key in players) { 
-                    if(players[key].char === btn.innerText && key !== myId) { 
-                        btn.classList.add('disabled'); btn.disabled = true; 
-                    } 
-                }
-            });
-            if(Object.keys(players).length === 0 && myId !== "") location.reload(); 
+            const players = snap.val();
+            // 데이터가 싹 지워졌는데(null) 내 아이디는 남아있다면 -> 초기화된 것이므로 새로고침
+            if(!players && myId !== "") location.reload();
         });
 
-        function selectChar(btn, char) {
-            if(btn.disabled) return;
-            document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected'); selectedChar = char;
+        function openNameModal(char) {
+            selectedChar = char;
+            document.getElementById('modalCharIcon').innerText = char;
+            document.getElementById('nameModal').style.display = 'flex';
+            document.getElementById('nameInput').focus();
         }
 
-        function join() {
+        function closeModal() {
+            document.getElementById('nameModal').style.display = 'none';
+        }
+
+        function joinGame() {
             const name = document.getElementById('nameInput').value;
-            if(!name || !selectedChar) return alert("이름과 캐릭터를 골라줘!");
+            if(!name) return alert("이름을 입력해야 입장할 수 있어요!");
+            
+            // 이름 뒤에 랜덤숫자를 붙여서 ID를 만듦 (동명이인도 접속 가능하게)
             myId = Date.now() + "_" + name;
             db.ref('players/' + myId).set({ name, char: selectedChar, pos: 0, time: Date.now() });
+            
+            closeModal();
             document.getElementById('login').style.display = 'none';
             document.getElementById('play').style.display = 'block';
             document.getElementById('myInfo').innerText = `${selectedChar} ${name}님`;
@@ -128,7 +161,7 @@
                 const storage = document.getElementById('goldenKeyStorage');
                 document.getElementById('storageText').innerText = key;
                 storage.style.display = 'block';
-                document.getElementById('penaltyMsg').innerText = "✨황금열쇠 획득! (위쪽 확인)";
+                document.getElementById('penaltyMsg').innerText = "✨황금열쇠 획득!";
                 if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             } else if (msg.includes("랜덤게임")) {
                 document.getElementById('penaltyMsg').innerHTML = "🎮 랜덤게임!<br>TV 화면을 눌러주세요!";
