@@ -9,7 +9,6 @@
     <style>
         body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
         
-        /* 캐릭터 버튼 스타일 */
         .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
         .char-btn { 
             font-size: 35px; height: 80px; 
@@ -18,7 +17,6 @@
         }
         .char-btn:active { box-shadow: 0 0 #ccc; transform: translateY(4px); background: #fff5f5; }
         
-        /* 이름 입력 팝업창 */
         #nameModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;
@@ -39,13 +37,15 @@
 
         #play { display: none; }
         
-        /* 게임 화면 스타일 */
-        .dice-btn { width: 140px; height: 140px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 30px; }
+        /* [수정됨] 주사위 버튼 스타일 (활성/비활성) */
+        .dice-btn { width: 140px; height: 140px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 30px; transition: 0.3s; }
         .dice-btn:active { box-shadow: 0 2px #d63031; transform: translateY(4px); }
+        
+        /* 비활성 상태 (회색) */
+        .dice-btn.disabled { background: #bdc3c7; box-shadow: none; cursor: not-allowed; transform: translateY(4px); opacity: 0.5; }
         
         #penaltyBox { min-height: 80px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 30px; }
         
-        /* 황금열쇠 보관함 */
         #goldenKeyStorage { 
             display: none; margin-top: 20px; padding: 15px; 
             background: #fff9c4; border: 3px dashed gold; border-radius: 15px; 
@@ -53,14 +53,17 @@
             animation: pop 0.3s ease-out;
         }
         .use-btn { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; margin-top: 10px; }
+        
+        /* [NEW] 턴 안내 메시지 */
+        #turnMsg { font-size: 16px; color: #555; margin-top: 10px; font-weight: bold; }
+
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
     <div id="login">
         <h2 style="margin-bottom: 20px;">내 캐릭터 고르기</h2>
-        <p style="color:#666; font-size:14px; margin-bottom:30px;">마음에 드는 걸 누르고 이름을 입력하세요!</p>
-        
+        <p style="color:#666; font-size:14px; margin-bottom:30px;">원하는 걸 누르고 이름을 입력하세요!</p>
         <div class="char-grid">
             <button class="char-btn" onclick="openNameModal('🍺')">🍺</button>
             <button class="char-btn" onclick="openNameModal('🍶')">🍶</button>
@@ -93,11 +96,12 @@
             <button class="use-btn" onclick="useKey()">사용하기 (삭제)</button>
         </div>
 
-        <button class="dice-btn" onclick="roll()">🎲</button>
+        <div id="turnMsg">잠시만 기다려주세요...</div>
+        <button id="diceBtn" class="dice-btn disabled" onclick="roll()">🎲</button>
         <h1 id="diceNum" style="margin: 10px 0; color:#ff4757;">?</h1>
         
         <div id="penaltyBox">
-            <p id="penaltyMsg" style="font-size:22px; font-weight:bold; color:#ff4757; margin:0;">주사위를 굴려주세요!</p>
+            <p id="penaltyMsg" style="font-size:22px; font-weight:bold; color:#ff4757; margin:0;">대기 중...</p>
         </div>
     </div>
 
@@ -115,12 +119,48 @@
         const goldKeys = ["나 안마셔!", "나 대신 마셔", "다음 판 주사위 +2", "지금 당장 나만 마셔", "전원 마시기", "게임 면제권", "면제권", "모두 나에게 존댓말"];
 
         let selectedChar = "", myId = "", currentPos = 0;
+        let playerList = []; // 순서 계산용 리스트
 
-        // [변경됨] 중복 체크 로직 삭제함. 오직 '게임 초기화' 여부만 감시합니다.
+        // 1. 플레이어 목록 감지 (순서 파악용)
         db.ref('players').on('value', (snap) => {
             const players = snap.val();
-            // 데이터가 싹 지워졌는데(null) 내 아이디는 남아있다면 -> 초기화된 것이므로 새로고침
-            if(!players && myId !== "") location.reload();
+            if(!players && myId !== "") location.reload(); // 초기화 감지
+
+            // 플레이어를 입장 시간순으로 정렬해서 리스트로 만듦
+            playerList = [];
+            for(let key in players) {
+                playerList.push({ key: key, ...players[key] });
+            }
+            playerList.sort((a, b) => a.time - b.time);
+        });
+
+        // 2. 현재 턴(누구 차례인지) 감지
+        db.ref('turn').on('value', (snap) => {
+            const currentTurnId = snap.val();
+            const diceBtn = document.getElementById('diceBtn');
+            const turnMsg = document.getElementById('turnMsg');
+            const penaltyMsg = document.getElementById('penaltyMsg');
+
+            if (!currentTurnId) return;
+
+            // 내 차례인가?
+            if (currentTurnId === myId) {
+                diceBtn.classList.remove('disabled');
+                diceBtn.disabled = false;
+                turnMsg.innerText = "🙌 내 차례입니다! 주사위를 굴리세요!";
+                turnMsg.style.color = "#ff4757";
+                if(penaltyMsg.innerText === "대기 중...") penaltyMsg.innerText = "Go!";
+                if(navigator.vibrate) navigator.vibrate(200); // 진동 알림
+            } else {
+                diceBtn.classList.add('disabled');
+                diceBtn.disabled = true;
+                
+                // 누구 차례인지 이름 찾기
+                const turnPlayer = playerList.find(p => p.key === currentTurnId);
+                const turnName = turnPlayer ? turnPlayer.name : "누군가";
+                turnMsg.innerText = `⏳ ${turnName}님의 차례입니다...`;
+                turnMsg.style.color = "#999";
+            }
         });
 
         function openNameModal(char) {
@@ -129,17 +169,14 @@
             document.getElementById('nameModal').style.display = 'flex';
             document.getElementById('nameInput').focus();
         }
-
-        function closeModal() {
-            document.getElementById('nameModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('nameModal').style.display = 'none'; }
 
         function joinGame() {
             const name = document.getElementById('nameInput').value;
-            if(!name) return alert("이름을 입력해야 입장할 수 있어요!");
+            if(!name) return alert("이름을 입력해주세요!");
             
-            // 이름 뒤에 랜덤숫자를 붙여서 ID를 만듦 (동명이인도 접속 가능하게)
             myId = Date.now() + "_" + name;
+            // 내 정보 저장
             db.ref('players/' + myId).set({ name, char: selectedChar, pos: 0, time: Date.now() });
             
             closeModal();
@@ -149,31 +186,47 @@
         }
 
         function roll() {
+            if(document.getElementById('diceBtn').disabled) return; // 억지로 누름 방지
+
             const dice = Math.floor(Math.random() * 6) + 1;
             currentPos = (currentPos + dice) % 28;
+            
+            // 1. 내 위치 업데이트
             db.ref('players/' + myId).update({ pos: currentPos });
             document.getElementById('diceNum').innerText = dice;
             
+            // 2. 벌칙 처리
             const msg = penalties[currentPos];
-            
             if (msg.includes("🗝️")) {
                 const key = goldKeys[Math.floor(Math.random() * goldKeys.length)];
-                const storage = document.getElementById('goldenKeyStorage');
                 document.getElementById('storageText').innerText = key;
-                storage.style.display = 'block';
+                document.getElementById('goldenKeyStorage').style.display = 'block';
                 document.getElementById('penaltyMsg').innerText = "✨황금열쇠 획득!";
-                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             } else if (msg.includes("랜덤게임")) {
                 document.getElementById('penaltyMsg').innerHTML = "🎮 랜덤게임!<br>TV 화면을 눌러주세요!";
             } else {
                 document.getElementById('penaltyMsg').innerText = msg;
             }
+
+            // 3. [핵심] 다음 사람에게 턴 넘기기
+            passTurn();
+        }
+
+        function passTurn() {
+            // 현재 내 인덱스 찾기
+            const myIndex = playerList.findIndex(p => p.key === myId);
+            if (myIndex === -1) return;
+
+            // 다음 사람 찾기 (마지막 사람이면 다시 0번으로)
+            const nextIndex = (myIndex + 1) % playerList.length;
+            const nextPlayerId = playerList[nextIndex].key;
+
+            // 서버에 다음 턴 저장
+            db.ref('turn').set(nextPlayerId);
         }
 
         function useKey() {
-            if(confirm("정말 사용(삭제)하시겠습니까?")) {
-                document.getElementById('goldenKeyStorage').style.display = 'none';
-            }
+            if(confirm("사용하시겠습니까?")) document.getElementById('goldenKeyStorage').style.display = 'none';
         }
     </script>
 </body>
