@@ -9,24 +9,19 @@
     <style>
         body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
         
-        /* 캐릭터 버튼 스타일 */
         .char-btn { font-size: 30px; margin: 5px; padding: 10px; border: 2px solid #ddd; background: white; border-radius: 12px; cursor: pointer; width: 60px; }
         .char-btn.disabled { opacity: 0.1; cursor: not-allowed; }
         .char-btn.selected { border-color: #ff4757; background: #ffeae6; }
         
         #play { display: none; }
         
-        /* 주사위 버튼 */
         .dice-btn { width: 140px; height: 140px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 10px; transition: 0.1s; }
         .dice-btn:active { box-shadow: 0 2px #d63031; transform: translateY(4px); }
         
-        /* 일반 벌칙 박스 */
         #penaltyBox { min-height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
         
-        /* [NEW] 황금열쇠 보관함 스타일 */
         #goldenKeyStorage { 
-            display: none; /* 평소엔 숨김 */
-            margin-top: 20px; padding: 15px; 
+            display: none; margin-top: 20px; padding: 15px; 
             background: #fff9c4; border: 3px dashed gold; border-radius: 15px; 
             box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
             animation: pop 0.3s ease-out;
@@ -72,12 +67,17 @@
     </div>
 
     <script>
-        // [수정] 본인의 Firebase 주소를 넣으세요
+        // [필수] 여기에 본인의 파이어베이스 주소를 꼭 넣어주세요!
         const firebaseConfig = { databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/" };
-        firebase.initializeApp(firebaseConfig);
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch(e) {
+            alert("파이어베이스 주소가 설정되지 않았습니다! 코드를 확인해주세요.");
+        }
+        
         const db = firebase.database();
 
-        // 벌칙 및 황금열쇠 목록
         const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔",
             "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "뒤로 한칸", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔",
             "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~",
@@ -87,12 +87,16 @@
         let selectedChar = "", myId = "", currentPos = 0;
 
         db.ref('players').on('value', (snap) => {
-            const players = snap.val();
+            const players = snap.val() || {}; // [수정됨] 데이터가 없어도 오류 안 나게 처리
             document.querySelectorAll('.char-btn').forEach(btn => {
                 btn.classList.remove('disabled'); btn.disabled = false;
-                for(let key in players) { if(players[key].char === btn.innerText && key !== myId) { btn.classList.add('disabled'); btn.disabled = true; } }
+                for(let key in players) { 
+                    if(players[key].char === btn.innerText && key !== myId) { 
+                        btn.classList.add('disabled'); btn.disabled = true; 
+                    } 
+                }
             });
-            if(!players && myId !== "") location.reload(); 
+            if(Object.keys(players).length === 0 && myId !== "") location.reload(); 
         });
 
         function selectChar(btn, char) {
@@ -121,15 +125,11 @@
             
             if (msg.includes("🗝️")) {
                 const key = goldKeys[Math.floor(Math.random() * goldKeys.length)];
-                
-                // [NEW] 황금열쇠를 뽑으면 보관함에 띄웁니다
                 const storage = document.getElementById('goldenKeyStorage');
                 document.getElementById('storageText').innerText = key;
                 storage.style.display = 'block';
-                
                 document.getElementById('penaltyMsg').innerText = "✨황금열쇠 획득! (위쪽 확인)";
                 if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-
             } else if (msg.includes("랜덤게임")) {
                 document.getElementById('penaltyMsg').innerHTML = "🎮 랜덤게임!<br>TV 화면을 눌러주세요!";
             } else {
@@ -137,7 +137,6 @@
             }
         }
 
-        // [NEW] 황금열쇠 사용(삭제) 함수
         function useKey() {
             if(confirm("정말 사용(삭제)하시겠습니까?")) {
                 document.getElementById('goldenKeyStorage').style.display = 'none';
