@@ -7,19 +7,41 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { text-align: center; font-family: sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
-        .char-btn { font-size: 35px; margin: 5px; padding: 10px; border: 2px solid #ddd; background: white; border-radius: 12px; cursor: pointer; width: 65px; }
+        body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
+        
+        /* 캐릭터 버튼 스타일 */
+        .char-btn { font-size: 30px; margin: 5px; padding: 10px; border: 2px solid #ddd; background: white; border-radius: 12px; cursor: pointer; width: 60px; }
         .char-btn.disabled { opacity: 0.1; cursor: not-allowed; }
         .char-btn.selected { border-color: #ff4757; background: #ffeae6; }
+        
         #play { display: none; }
-        .dice-btn { width: 160px; height: 160px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 20px; }
+        
+        /* 주사위 버튼 */
+        .dice-btn { width: 140px; height: 140px; font-size: 50px; border-radius: 50%; border: none; background: #ff4757; color: white; box-shadow: 0 8px #d63031; cursor: pointer; margin-top: 10px; transition: 0.1s; }
         .dice-btn:active { box-shadow: 0 2px #d63031; transform: translateY(4px); }
+        
+        /* 일반 벌칙 박스 */
+        #penaltyBox { min-height: 60px; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        
+        /* [NEW] 황금열쇠 보관함 스타일 */
+        #goldenKeyStorage { 
+            display: none; /* 평소엔 숨김 */
+            margin-top: 20px; padding: 15px; 
+            background: #fff9c4; border: 3px dashed gold; border-radius: 15px; 
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+            animation: pop 0.3s ease-out;
+        }
+        .storage-title { color: #f39c12; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .key-content { font-size: 18px; font-weight: bold; color: #333; margin: 10px 0; }
+        .use-btn { background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; }
+        
+        @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
     <div id="login">
-        <h2>🍷 캐릭터 선택 🍷</h2>
-        <input id="nameInput" type="text" placeholder="이름 입력 (4자)" maxlength="4" style="padding:15px; width:80%; font-size:18px; border-radius:10px; border:1px solid #ccc; margin-bottom:15px;"><br>
+        <h3>🍷 캐릭터 선택 (중복 불가) 🍷</h3>
+        <input id="nameInput" type="text" placeholder="이름 입력" maxlength="4" style="padding:15px; width:80%; font-size:16px; border-radius:10px; border:1px solid #ccc; margin-bottom:15px;"><br>
         <div id="charList">
             <button class="char-btn" onclick="selectChar(this, '🍺')">🍺</button>
             <button class="char-btn" onclick="selectChar(this, '🍶')">🍶</button>
@@ -29,32 +51,40 @@
             <button class="char-btn" onclick="selectChar(this, '🤢')">🤢</button>
             <button class="char-btn" onclick="selectChar(this, '😎')">😎</button>
         </div>
-        <button onclick="join()" style="margin-top:25px; padding:15px 40px; font-size:20px; background: #2d3436; color:white; border:none; border-radius:10px; font-weight:bold;">게임 입장</button>
+        <button onclick="join()" style="margin-top:20px; padding:15px 40px; font-size:18px; background: #2d3436; color:white; border:none; border-radius:10px;">게임 입장</button>
     </div>
 
     <div id="play">
-        <h2 id="myInfo"></h2>
+        <h2 id="myInfo" style="margin: 10px 0;"></h2>
+        
+        <div id="goldenKeyStorage">
+            <div class="storage-title">🔑 보유 중인 황금열쇠</div>
+            <div id="storageText" class="key-content">내용</div>
+            <button class="use-btn" onclick="useKey()">사용하기 (삭제)</button>
+        </div>
+
         <button class="dice-btn" onclick="roll()">🎲</button>
-        <h1 id="diceNum">?</h1>
-        <div id="penaltyBox" style="min-height:100px; background:white; border-radius:15px; display:flex; align-items:center; justify-content:center; padding:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-            <p id="penaltyMsg" style="font-size:22px; font-weight:bold; color:#ff4757; margin:0;"></p>
+        <h1 id="diceNum" style="margin: 10px 0;">?</h1>
+        
+        <div id="penaltyBox">
+            <p id="penaltyMsg" style="font-size:20px; font-weight:bold; color:#ff4757; margin:0;">주사위를 굴려주세요!</p>
         </div>
     </div>
 
     <script>
+        // [수정] 본인의 Firebase 주소를 넣으세요
         const firebaseConfig = { databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let selectedChar = "", myId = "", currentPos = 0;
 
-        // 미니게임 URL 주소 (같은 폴더에 있다면 파일명만 적으세요)
-        const minigameUrl = "game.html"; 
-
-        const penalties = [ "시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔",
+        // 벌칙 및 황금열쇠 목록
+        const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔",
             "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "뒤로 한칸", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔",
             "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~",
             "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
         const goldKeys = ["나 안마셔!", "나 대신 마셔", "다음 판 주사위 +2", "지금 당장 나만 마셔", "전원 마시기", "게임 면제권", "면제권", "모두 나에게 존댓말"];
+
+        let selectedChar = "", myId = "", currentPos = 0;
 
         db.ref('players').on('value', (snap) => {
             const players = snap.val();
@@ -87,22 +117,30 @@
             db.ref('players/' + myId).update({ pos: currentPos });
             document.getElementById('diceNum').innerText = dice;
             
-            const currentPenalty = penalties[currentPos];
-
-            // 랜덤게임 이동 로직
-            if (currentPenalty.includes("랜덤게임")) {
-                alert("🎮 랜덤게임을 시작합니다!");
-                window.location.href = minigameUrl;
-                return;
-            }
-
-            // 황금열쇠 로직
-            if (currentPenalty.includes("🗝️")) {
+            const msg = penalties[currentPos];
+            
+            if (msg.includes("🗝️")) {
                 const key = goldKeys[Math.floor(Math.random() * goldKeys.length)];
-                document.getElementById('penaltyMsg').innerHTML = `<span style="color:gold; text-shadow:1px 1px 1px #000;">✨황금열쇠✨</span><br>${key}`;
-                if(navigator.vibrate) navigator.vibrate([100, 30, 100]);
+                
+                // [NEW] 황금열쇠를 뽑으면 보관함에 띄웁니다
+                const storage = document.getElementById('goldenKeyStorage');
+                document.getElementById('storageText').innerText = key;
+                storage.style.display = 'block';
+                
+                document.getElementById('penaltyMsg').innerText = "✨황금열쇠 획득! (위쪽 확인)";
+                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+            } else if (msg.includes("랜덤게임")) {
+                document.getElementById('penaltyMsg').innerHTML = "🎮 랜덤게임!<br>TV 화면을 눌러주세요!";
             } else {
-                document.getElementById('penaltyMsg').innerText = currentPenalty;
+                document.getElementById('penaltyMsg').innerText = msg;
+            }
+        }
+
+        // [NEW] 황금열쇠 사용(삭제) 함수
+        function useKey() {
+            if(confirm("정말 사용(삭제)하시겠습니까?")) {
+                document.getElementById('goldenKeyStorage').style.display = 'none';
             }
         }
     </script>
