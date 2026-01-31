@@ -9,23 +9,19 @@
     <style>
         body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
         
-        /* 캐릭터 선택 */
         .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 20px auto; }
         .char-btn { font-size: 35px; height: 80px; border: 2px solid #ddd; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #ccc; cursor: pointer; transition: 0.2s; }
         .char-btn:active { transform: scale(0.95); background: #eee; }
         
         #nameInput { font-size: 20px; padding: 12px; width: 80%; border: 2px solid #333; border-radius: 10px; margin-bottom: 20px; text-align: center; }
 
-        /* 주사위 버튼 */
         .dice-btn { width: 150px; height: 150px; font-size: 60px; border-radius: 50%; background: #ff4757; color: white; margin-top: 30px; border: 8px solid #d63031; box-shadow: 0 8px #b33939; cursor: pointer; transition: 0.2s; }
         .dice-btn:active { transform: translateY(4px); box-shadow: 0 4px #b33939; }
         .dice-btn:disabled { background: #ccc; border-color: #999; opacity: 0.5; box-shadow: none; cursor: not-allowed; }
 
-        /* 황금열쇠 보관함 */
         #goldenKeyStorage { display: none; margin-top: 20px; padding: 20px; background: #fff9c4; border: 4px solid #f1c40f; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        /* 알람 오버레이 */
         #alertOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #dc143c; color: white; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         #alertText { font-size: 24px; background: black; padding: 15px; border: 2px solid yellow; border-radius: 10px; margin-top: 20px; line-height: 1.4; width: 80%; }
     </style>
@@ -70,25 +66,14 @@
     </div>
 
     <script>
-        // ★ https://jurumable-9fdde-default-rtdb.firebaseio.com/ (Host.html과 동일해야 함)
-        const firebaseConfig = {
-            apiKey: "AIzaSy...",
-            authDomain: "your-project.firebaseapp.com",
-            databaseURL: "https://your-project.firebaseio.com",
-            projectId: "your-project",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
+        const firebaseConfig = { databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let myId, currentPos = 0, playerList = [];
 
-        // 황금열쇠 리스트
         const allKeys = ["나 안마셔!", "나 대신 마셔", "다음 턴 주사위 +2", "게임 면제권", "전원 마시기", "영어 금지 (훈민정음)", "핸드폰 압수", "말끝마다 '냥'", "왼손으로만 마시기"];
 
-        // 입장 함수
         function join(c) {
             const n = document.getElementById('nameInput').value;
             if(!n) return alert("이름을 입력해주세요!");
@@ -101,10 +86,8 @@
             document.getElementById('myInfo').innerText = c + " " + n + "님";
         }
 
-        // 플레이어 목록 동기화
         db.ref('players').on('value', s => {
             const ps = s.val();
-            // 게임 초기화 시 나도 메인으로 튕기게 설정
             if (!ps && document.getElementById('game').style.display === 'block') {
                 alert("게임이 초기화되었습니다.");
                 location.reload();
@@ -113,7 +96,6 @@
             playerList = ps ? Object.keys(ps).map(k=>({key:k, ...ps[k]})).sort((a,b)=>a.time - b.time) : [];
         });
 
-        // 턴 관리
         db.ref('turn').on('value', s => {
             const tId = s.val();
             const btn = document.getElementById('rollBtn');
@@ -134,7 +116,6 @@
             }
         });
 
-        // 서든데스 알림
         db.ref('suddenDeath').on('value', s => {
             const d = s.val();
             const ov = document.getElementById('alertOverlay');
@@ -146,7 +127,6 @@
             } else { ov.style.display = 'none'; }
         });
 
-        // 미니게임 알림
         db.ref('miniGameAlert').on('value', s => {
             const al = s.val();
             if(al && al[myId]) {
@@ -159,28 +139,22 @@
             }
         });
 
-        // 주사위 굴리기
         function roll() {
             const dice = Math.floor(Math.random() * 6) + 1;
             currentPos = (currentPos + dice) % 28;
             
             let action = "";
-            // 황금열쇠 칸 (인덱스 3, 11, 18, 25)
             const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "뒤로 한칸", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
             
             if(penalties[currentPos].includes("황금열쇠")) {
                 const key = allKeys[Math.floor(Math.random() * allKeys.length)];
-                action = key; // 호스트에게 전달할 액션
-                
-                // 내 폰에 표시
+                action = key; 
                 document.getElementById('storageText').innerText = key;
                 document.getElementById('goldenKeyStorage').style.display = 'block';
             }
 
-            // DB 업데이트
             db.ref('players/' + myId).update({ pos: currentPos, action: action });
             
-            // 턴 넘기기
             const myIdx = playerList.findIndex(p => p.key === myId);
             const nextIdx = (myIdx + 1) % playerList.length;
             db.ref('turn').set(playerList[nextIdx].key);
