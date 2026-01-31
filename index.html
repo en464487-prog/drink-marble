@@ -20,7 +20,6 @@
         .dice-btn:disabled { background: #ccc; border-color: #999; opacity: 0.5; box-shadow: none; cursor: not-allowed; }
 
         #goldenKeyStorage, #randomGameBtnArea { display: none; margin-top: 20px; padding: 20px; background: #fff9c4; border: 4px solid #f1c40f; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
-        /* 랜덤게임 버튼 영역 */
         #randomGameBtnArea { background: #e8f5e9; border: 4px solid #2ecc71; }
         
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -88,21 +87,39 @@
             if(!n) return alert("이름을 입력해주세요!");
             
             myId = Date.now() + "_" + n;
-            db.ref('players/' + myId).set({ name: n, char: c, pos: 0, time: Date.now(), action: "" });
             
+            // 1. 내 정보 등록
+            db.ref('players/' + myId).set({ name: n, char: c, pos: 0, time: Date.now(), action: "" });
+
+            // 2. 화면 전환
             document.getElementById('setup').style.display='none';
             document.getElementById('game').style.display='block';
             document.getElementById('myInfo').innerText = c + " " + n + "님";
+
+            // 3. 만약 내가 첫 번째 사람이면 강제로 턴을 가져옴
+            db.ref('players').once('value', s => {
+                const numPlayers = s.numChildren();
+                if (numPlayers === 1) {
+                    db.ref('turn').set(myId);
+                }
+            });
         }
 
         db.ref('players').on('value', s => {
             const ps = s.val();
-            if (!ps && document.getElementById('game').style.display === 'block') {
-                alert("게임이 초기화되었습니다.");
-                location.reload();
+            
+            // 데이터가 아예 없으면 (초기화된 상태)
+            if (!ps) {
+                if(document.getElementById('game').style.display === 'block') {
+                    alert("게임이 초기화되었습니다.");
+                    location.reload();
+                }
+                playerList = [];
                 return;
             }
-            playerList = ps ? Object.keys(ps).map(k=>({key:k, ...ps[k]})).sort((a,b)=>a.time - b.time) : [];
+
+            // 플레이어 리스트 갱신 (입장 시간순 정렬)
+            playerList = Object.keys(ps).map(k=>({key:k, ...ps[k]})).sort((a,b)=>a.time - b.time);
         });
 
         db.ref('turn').on('value', s => {
@@ -110,7 +127,11 @@
             const btn = document.getElementById('rollBtn');
             const status = document.getElementById('status');
             
-            if(!tId && playerList.length > 0) db.ref('turn').set(playerList[0].key);
+            // 턴 정보가 없거나 이상하면, 첫 번째 사람에게 턴 부여 (자동 복구)
+            if((!tId || !playerList.find(p => p.key === tId)) && playerList.length > 0) {
+                db.ref('turn').set(playerList[0].key);
+                return; // 다음 업데이트에서 처리
+            }
             
             if (tId === myId) {
                 btn.disabled = false;
@@ -125,6 +146,7 @@
             }
         });
 
+        // (나머지 서든데스, 미니게임 알림 코드는 그대로 유지)
         db.ref('suddenDeath').on('value', s => {
             const d = s.val();
             const ov = document.getElementById('alertOverlay');
@@ -157,7 +179,6 @@
             
             const currentCell = penalties[currentPos];
 
-            // 1. 황금열쇠 처리
             if(currentCell.includes("황금열쇠")) {
                 const key = allKeys[Math.floor(Math.random() * allKeys.length)];
                 action = key; 
@@ -165,7 +186,6 @@
                 document.getElementById('goldenKeyStorage').style.display = 'block';
             }
             
-            // 2. 랜덤게임 버튼 노출 처리 (해당 플레이어 화면에만)
             if(currentCell.includes("랜덤게임")) {
                 document.getElementById('randomGameBtnArea').style.display = 'block';
             } else {
