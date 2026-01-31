@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,93 +8,133 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 400px; margin: 20px auto; }
-        .char-btn { font-size: 40px; height: 90px; border: 2px solid #ddd; background: white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        #nameInput { font-size: 20px; padding: 15px; width: 80%; border: 3px solid #333; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         
+        /* 캐릭터 선택 */
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 20px auto; }
+        .char-btn { font-size: 35px; height: 80px; border: 2px solid #ddd; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #ccc; cursor: pointer; transition: 0.2s; }
+        .char-btn:active { transform: scale(0.95); background: #eee; }
+        
+        #nameInput { font-size: 20px; padding: 12px; width: 80%; border: 2px solid #333; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+
         /* 주사위 버튼 */
-        .dice-btn { width: 160px; height: 160px; font-size: 70px; border-radius: 50%; background: #ff4757; color: white; margin-top: 40px; border: 8px solid #d63031; cursor: pointer; box-shadow: 0 10px #b33939; }
-        .dice-btn:disabled { background: #ccc; border-color: #999; box-shadow: none; cursor: not-allowed; transform: translateY(5px); }
-        
-        /* [복구됨] 황금열쇠 보관함 스타일 */
-        #goldenKeyStorage { display: none; margin-top: 20px; padding: 20px; background: #fff9c4; border: 4px solid #f1c40f; border-radius: 15px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); animation: bounceIn 0.5s ease-out; }
-        .confirm-btn { background: #333; color: white; border: none; padding: 10px 25px; border-radius: 20px; cursor: pointer; font-size: 16px; margin-top: 15px; font-weight: bold; }
+        .dice-btn { width: 150px; height: 150px; font-size: 60px; border-radius: 50%; background: #ff4757; color: white; margin-top: 30px; border: 8px solid #d63031; box-shadow: 0 8px #b33939; cursor: pointer; transition: 0.2s; }
+        .dice-btn:active { transform: translateY(4px); box-shadow: 0 4px #b33939; }
+        .dice-btn:disabled { background: #ccc; border-color: #999; opacity: 0.5; box-shadow: none; cursor: not-allowed; }
+
+        /* 황금열쇠 보관함 */
+        #goldenKeyStorage { display: none; margin-top: 20px; padding: 20px; background: #fff9c4; border: 4px solid #f1c40f; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         /* 알람 오버레이 */
-        #alertOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #dc143c; color: white; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
-        #alertText { font-size: 26px; background: black; padding: 20px; border: 3px solid yellow; border-radius: 15px; margin-top: 20px; width: 85%; }
-        
-        @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+        #alertOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #dc143c; color: white; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        #alertText { font-size: 24px; background: black; padding: 15px; border: 2px solid yellow; border-radius: 10px; margin-top: 20px; line-height: 1.4; width: 80%; }
     </style>
 </head>
 <body>
     <div id="alertOverlay">
-        <h1 id="alertTitle" style="font-size:38px;">🚨 서든데스! 🚨</h1>
+        <h1 id="alertTitle" style="font-size:35px;">🚨 서든데스 🚨</h1>
         <p id="alertText"></p>
-        <h2 style="margin-top:30px; opacity:0.8;">TV 화면을 주시하세요!</h2>
+        <h2 style="margin-top:20px;">TV 화면을 확인하세요!</h2>
     </div>
 
     <div id="setup">
-        <h1 style="font-size: 35px; color: #ff4757;">🍺 주루 마블</h1>
-        <input type="text" id="nameInput" placeholder="이름 (최대 4자)" maxlength="4">
+        <h1 style="color:#ff4757; font-size: 32px; margin-bottom: 10px;">🍺 주루 마블</h1>
+        <p style="color:#666; margin-bottom: 20px;">이름을 쓰고 캐릭터를 고르세요!</p>
+        
+        <input type="text" id="nameInput" placeholder="이름 (4자 이내)" maxlength="4">
+        
         <div class="char-grid">
-            <div class="char-btn" onclick="join('🍺')">🍺</div><div class="char-btn" onclick="join('🍶')">🍶</div><div class="char-btn" onclick="join('🔥')">🔥</div>
-            <div class="char-btn" onclick="join('😎')">😎</div><div class="char-btn" onclick="join('🤢')">🤢</div><div class="char-btn" onclick="join('👻')">👻</div>
-            <div class="char-btn" onclick="join('🍷')">🍷</div><div class="char-btn" onclick="join('🍹')">🍹</div><div class="char-btn" onclick="join('💩')">💩</div>
+            <div class="char-btn" onclick="join('🍺')">🍺</div>
+            <div class="char-btn" onclick="join('🔥')">🔥</div>
+            <div class="char-btn" onclick="join('😎')">😎</div>
+            <div class="char-btn" onclick="join('🍶')">🍶</div>
+            <div class="char-btn" onclick="join('🤢')">🤢</div>
+            <div class="char-btn" onclick="join('👻')">👻</div>
+            <div class="char-btn" onclick="join('🍷')">🍷</div>
+            <div class="char-btn" onclick="join('🍹')">🍹</div>
+            <div class="char-btn" onclick="join('💩')">💩</div>
         </div>
     </div>
 
     <div id="game" style="display:none;">
-        <h2 id="myDisplay"></h2>
+        <h2 id="myInfo" style="margin-top:0;"></h2>
         
         <div id="goldenKeyStorage">
             <h3 style="margin:0; color: #d35400;">🗝️ 황금열쇠 획득!</h3>
-            <p id="storageText" style="font-size: 22px; font-weight: bold; margin: 15px 0; color: #2c3e50;"></p>
-            <button class="confirm-btn" onclick="closeKey()">확인 / 사용완료</button>
+            <p id="storageText" style="font-size: 20px; font-weight: bold; margin: 15px 0; word-break: keep-all;"></p>
+            <button onclick="document.getElementById('goldenKeyStorage').style.display='none'" style="padding:10px 20px; background:#333; color:white; border:none; border-radius:20px;">확인 완료</button>
         </div>
 
-        <div id="status" style="margin-top:20px; font-weight:bold; font-size:20px;">상대방 대기 중...</div>
+        <h3 id="status" style="margin-top:30px; font-weight: bold; color: #555;">대기 중...</h3>
         <button id="rollBtn" class="dice-btn" onclick="roll()">🎲</button>
-        <div id="penaltyLog" style="margin-top:20px; font-size: 24px; color: #ff4757; font-weight: bold;"></div>
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/" };
+        // ★ https://jurumable-9fdde-default-rtdb.firebaseio.com/ (Host.html과 동일해야 함)
+        const firebaseConfig = {
+            apiKey: "AIzaSy...",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project.firebaseio.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let myId, myName, myChar, currentPos = 0, playerList = [];
-        
-        // 황금열쇠 리스트
-        const privateKeys = ["나 안마셔!", "나 대신 마셔", "다음 판 주사위 +2", "게임 면제권", "면제권"];
-        const publicKeys = ["지금 당장 나만 마셔", "전원 마시기", "모두 나에게 존댓말", "🚫 훈민정음 (영어 금지)", "📵 핸드폰 압수", "🐱 말끝마다 '냥'", "✋ 왼손으로만 마시기"];
-        const allKeys = [...privateKeys, ...publicKeys];
+        let myId, currentPos = 0, playerList = [];
 
+        // 황금열쇠 리스트
+        const allKeys = ["나 안마셔!", "나 대신 마셔", "다음 턴 주사위 +2", "게임 면제권", "전원 마시기", "영어 금지 (훈민정음)", "핸드폰 압수", "말끝마다 '냥'", "왼손으로만 마시기"];
+
+        // 입장 함수
         function join(c) {
             const n = document.getElementById('nameInput').value;
-            if(!n) return alert("이름 입력!");
+            if(!n) return alert("이름을 입력해주세요!");
+            
             myId = Date.now() + "_" + n;
             db.ref('players/' + myId).set({ name: n, char: c, pos: 0, time: Date.now(), action: "" });
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('game').style.display = 'block';
-            document.getElementById('myDisplay').innerText = c + " " + n + "님";
+            
+            document.getElementById('setup').style.display='none';
+            document.getElementById('game').style.display='block';
+            document.getElementById('myInfo').innerText = c + " " + n + "님";
         }
 
+        // 플레이어 목록 동기화
         db.ref('players').on('value', s => {
             const ps = s.val();
+            // 게임 초기화 시 나도 메인으로 튕기게 설정
+            if (!ps && document.getElementById('game').style.display === 'block') {
+                alert("게임이 초기화되었습니다.");
+                location.reload();
+                return;
+            }
             playerList = ps ? Object.keys(ps).map(k=>({key:k, ...ps[k]})).sort((a,b)=>a.time - b.time) : [];
         });
 
+        // 턴 관리
         db.ref('turn').on('value', s => {
             const tId = s.val();
             const btn = document.getElementById('rollBtn');
             const status = document.getElementById('status');
+            
             if(!tId && playerList.length > 0) db.ref('turn').set(playerList[0].key);
-            btn.disabled = (tId !== myId);
-            status.innerText = (tId === myId) ? "🔔 당신의 차례!" : "대기 중...";
-            status.style.color = (tId === myId) ? "red" : "#555";
+            
+            if (tId === myId) {
+                btn.disabled = false;
+                status.innerText = "🔔 당신의 차례입니다! 굴리세요!";
+                status.style.color = "#ff4757";
+                if(navigator.vibrate) navigator.vibrate(200);
+            } else {
+                btn.disabled = true;
+                const turnOwner = playerList.find(p => p.key === tId);
+                status.innerText = (turnOwner ? turnOwner.name : "누군가") + "님이 진행 중...";
+                status.style.color = "#555";
+            }
         });
 
+        // 서든데스 알림
         db.ref('suddenDeath').on('value', s => {
             const d = s.val();
             const ov = document.getElementById('alertOverlay');
@@ -106,43 +146,44 @@
             } else { ov.style.display = 'none'; }
         });
 
+        // 미니게임 알림
         db.ref('miniGameAlert').on('value', s => {
             const al = s.val();
             if(al && al[myId]) {
                 document.getElementById('alertTitle').innerText = "⚔️ 미니게임 발동! ⚔️";
-                document.getElementById('alertText').innerText = "TV의 룰렛을 확인하세요!";
+                document.getElementById('alertText').innerText = "같은 칸 라이벌 등장! TV를 보세요!";
                 document.getElementById('alertOverlay').style.display = 'flex';
+                if(navigator.vibrate) navigator.vibrate(500);
             } else if (!document.getElementById('alertTitle').innerText.includes("서든데스")) {
                 document.getElementById('alertOverlay').style.display = 'none';
             }
         });
 
+        // 주사위 굴리기
         function roll() {
             const dice = Math.floor(Math.random() * 6) + 1;
             currentPos = (currentPos + dice) % 28;
             
             let action = "";
+            // 황금열쇠 칸 (인덱스 3, 11, 18, 25)
             const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "뒤로 한칸", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
-            const pText = penalties[currentPos];
-
-            if(pText.includes("황금열쇠")) {
+            
+            if(penalties[currentPos].includes("황금열쇠")) {
                 const key = allKeys[Math.floor(Math.random() * allKeys.length)];
-                action = publicKeys.includes(key) ? key : "SECRET";
-                // 폰 화면에 표시
+                action = key; // 호스트에게 전달할 액션
+                
+                // 내 폰에 표시
                 document.getElementById('storageText').innerText = key;
                 document.getElementById('goldenKeyStorage').style.display = 'block';
-                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             }
-            
-            document.getElementById('penaltyLog').innerText = pText;
+
+            // DB 업데이트
             db.ref('players/' + myId).update({ pos: currentPos, action: action });
             
+            // 턴 넘기기
             const myIdx = playerList.findIndex(p => p.key === myId);
-            db.ref('turn').set(playerList[(myIdx + 1) % playerList.length].key);
-        }
-
-        function closeKey() {
-            document.getElementById('goldenKeyStorage').style.display = 'none';
+            const nextIdx = (myIdx + 1) % playerList.length;
+            db.ref('turn').set(playerList[nextIdx].key);
         }
     </script>
 </body>
