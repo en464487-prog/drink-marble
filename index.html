@@ -8,117 +8,119 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body { text-align: center; font-family: 'Apple SD Gothic Neo', sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        
         .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 20px auto; }
         .char-btn { font-size: 35px; height: 80px; border: 2px solid #ddd; background: white; border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #ccc; cursor: pointer; transition: 0.2s; }
         .char-btn:active { transform: scale(0.95); background: #eee; }
-        
         #nameInput { font-size: 20px; padding: 12px; width: 80%; border: 2px solid #333; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-
         .dice-btn { width: 150px; height: 150px; font-size: 60px; border-radius: 50%; background: #ff4757; color: white; margin-top: 30px; border: 8px solid #d63031; box-shadow: 0 8px #b33939; cursor: pointer; transition: 0.2s; }
         .dice-btn:active { transform: translateY(4px); box-shadow: 0 4px #b33939; }
         .dice-btn:disabled { background: #ccc; border-color: #999; opacity: 0.5; box-shadow: none; cursor: not-allowed; }
-
-        #goldenKeyStorage, #randomGameBtnArea { display: none; margin-top: 20px; padding: 20px; background: #fff9c4; border: 4px solid #f1c40f; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
-        #randomGameBtnArea { background: #e8f5e9; border: 4px solid #2ecc71; }
-        
+        #goldenKeyStorage, #randomGameBtnArea { display: none; margin-top: 20px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
+        #goldenKeyStorage { background: #fff9c4; border: 4px solid #f1c40f; }
+        #randomGameBtnArea { background: #e3f2fd; border: 4px solid #2196f3; }
+        #bombAlert { display: none; background: #ffebee; border: 2px solid #ef5350; color: #c62828; padding: 15px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; animation: pulse 1s infinite; }
+        #alertOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        #alertContent { background: white; color: black; padding: 30px; border-radius: 20px; width: 80%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #alertTitle { font-size: 28px; margin-bottom: 15px; font-weight: 900; }
+        #alertText { font-size: 20px; line-height: 1.4; word-break: keep-all; }
+        #alertSubText { font-size: 14px; color: #666; margin-top: 10px; }
+        .theme-red { background: rgba(220, 20, 60, 0.9) !important; }
+        .theme-blue { background: rgba(33, 150, 243, 0.9) !important; }
+        .theme-orange { background: rgba(255, 152, 0, 0.9) !important; }
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        #alertOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #dc143c; color: white; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-        #alertText { font-size: 24px; background: black; padding: 15px; border: 2px solid yellow; border-radius: 10px; margin-top: 20px; line-height: 1.4; width: 80%; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
     <div id="alertOverlay">
-        <h1 id="alertTitle" style="font-size:35px;">🚨 서든데스 🚨</h1>
-        <p id="alertText"></p>
-        <h2 style="margin-top:20px;">TV 화면을 확인하세요!</h2>
-    </div>
-
-    <div id="setup">
-        <h1 style="color:#ff4757; font-size: 32px; margin-bottom: 10px;">🍺 주루 마블</h1>
-        <p style="color:#666; margin-bottom: 20px;">이름을 쓰고 캐릭터를 고르세요!</p>
-        
-        <input type="text" id="nameInput" placeholder="이름 (4자 이내)" maxlength="4">
-        
-        <div class="char-grid">
-            <div class="char-btn" onclick="join('🍺')">🍺</div>
-            <div class="char-btn" onclick="join('🔥')">🔥</div>
-            <div class="char-btn" onclick="join('😎')">😎</div>
-            <div class="char-btn" onclick="join('🍶')">🍶</div>
-            <div class="char-btn" onclick="join('🤢')">🤢</div>
-            <div class="char-btn" onclick="join('👻')">👻</div>
-            <div class="char-btn" onclick="join('🍷')">🍷</div>
-            <div class="char-btn" onclick="join('🍹')">🍹</div>
-            <div class="char-btn" onclick="join('💩')">💩</div>
+        <div id="alertContent">
+            <h1 id="alertTitle">알림</h1>
+            <p id="alertText"></p>
+            <p id="alertSubText"></p>
+            <button onclick="document.getElementById('alertOverlay').style.display='none'" style="margin-top:20px; padding:10px 30px; font-size:18px; border:none; background:#333; color:white; border-radius:10px; cursor:pointer;">확인</button>
         </div>
     </div>
-
+    <div id="setup">
+        <h1 style="color:#ff4757; font-size: 32px; margin-bottom: 10px;">🍺 주루 마블</h1>
+        <input type="text" id="nameInput" placeholder="이름 (4자 이내)" maxlength="4">
+        <div class="char-grid">
+            <div class="char-btn" onclick="join('🍺')">🍺</div><div class="char-btn" onclick="join('🔥')">🔥</div><div class="char-btn" onclick="join('😎')">😎</div>
+            <div class="char-btn" onclick="join('🍶')">🍶</div><div class="char-btn" onclick="join('🤢')">🤢</div><div class="char-btn" onclick="join('👻')">👻</div>
+            <div class="char-btn" onclick="join('🍷')">🍷</div><div class="char-btn" onclick="join('🍹')">🍹</div><div class="char-btn" onclick="join('💩')">💩</div>
+        </div>
+    </div>
     <div id="game" style="display:none;">
+        <div id="bombAlert">💣 당신은 폭탄을 가지고 있습니다!</div>
         <h2 id="myInfo" style="margin-top:0;"></h2>
-        
         <div id="goldenKeyStorage">
-            <h3 style="margin:0; color: #d35400;">🗝️ 황금열쇠 획득!</h3>
+            <h3 style="margin:0; color: #d35400;">🃏 히든 카드 획득!</h3>
             <p id="storageText" style="font-size: 20px; font-weight: bold; margin: 15px 0; word-break: keep-all;"></p>
             <button onclick="document.getElementById('goldenKeyStorage').style.display='none'" style="padding:10px 20px; background:#333; color:white; border:none; border-radius:20px;">확인 완료</button>
         </div>
-
         <div id="randomGameBtnArea">
-            <h3 style="margin:0; color: #27ae60;">🎮 랜덤게임 도착!</h3>
-            <p style="font-size: 16px; margin: 10px 0;">게임 페이지를 엽니다.</p>
-            <button onclick="window.location.href='random.html'" style="padding:15px 30px; background:#2ecc71; color:white; border:none; border-radius:20px; font-weight:bold; font-size:18px;">게임 시작하기 ▶</button>
+            <h3 style="margin:0; color: #1565c0;">🎮 랜덤게임 도착!</h3>
+            <p style="font-size: 16px; margin: 10px 0;">TV 화면의 슬롯머신을 돌리세요.</p>
+            <button onclick="triggerSlotMachine()" style="padding:15px 30px; background:#2196f3; color:white; border:none; border-radius:20px; font-weight:bold; font-size:18px;">🎰 슬롯 돌리기</button>
         </div>
-
         <h3 id="status" style="margin-top:30px; font-weight: bold; color: #555;">대기 중...</h3>
         <button id="rollBtn" class="dice-btn" onclick="roll()">🎲</button>
     </div>
-
     <script>
-        const firebaseConfig = { databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/" };
+        const firebaseConfig = {
+            apiKey: "AIzaSy...",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://jurumable-9fdde-default-rtdb.firebaseio.com/",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let myId, currentPos = 0, playerList = [];
-
-        const allKeys = ["나 안마셔!", "나 대신 마셔", "다음 턴 주사위 +2", "게임 면제권", "전원 마시기", "영어 금지 (훈민정음)", "핸드폰 압수", "말끝마다 '냥'", "왼손으로만 마시기"];
+        const privateKeys = ["나 안마셔!", "나 대신 마셔", "다음 턴 주사위 +2", "게임 면제권"]; 
+        const publicKeys = ["전원 마시기", "영어 금지 (훈민정음)", "핸드폰 압수", "말끝마다 '냥'", "왼손으로만 마시기"];
+        const allKeys = [...privateKeys, ...publicKeys];
+        const bombPenalties = ["🥃 소주 큰 잔에 원샷!", "📸 엽사 찍어 인스타 업뎃!", "🤫 진실 or 창피한 일 말하기"];
 
         function join(c) {
             const n = document.getElementById('nameInput').value;
             if(!n) return alert("이름을 입력해주세요!");
-            
             myId = Date.now() + "_" + n;
-            
-            // 1. 내 정보 등록
-            db.ref('players/' + myId).set({ name: n, char: c, pos: 0, time: Date.now(), action: "" });
-
-            // 2. 화면 전환
+            db.ref('players/' + myId).set({ name: n, char: c, pos: 0, time: Date.now(), action: "", drinkCount: 0 });
             document.getElementById('setup').style.display='none';
             document.getElementById('game').style.display='block';
             document.getElementById('myInfo').innerText = c + " " + n + "님";
-
-            // 3. 만약 내가 첫 번째 사람이면 강제로 턴을 가져옴
-            db.ref('players').once('value', s => {
-                const numPlayers = s.numChildren();
-                if (numPlayers === 1) {
-                    db.ref('turn').set(myId);
-                }
-            });
+            db.ref('players').once('value', s => { if (s.numChildren() === 1) db.ref('turn').set(myId); });
         }
+
+        db.ref('bomb').on('value', s => {
+            const b = s.val();
+            const alertDiv = document.getElementById('bombAlert');
+            if (b && b.owner === myId) {
+                alertDiv.innerHTML = `💣 폭탄을 가지고 있습니다!<br>남은 턴: ${b.timer}`;
+                alertDiv.style.display = "block";
+                if (b.timer <= 0) {
+                    const penalty = bombPenalties[Math.floor(Math.random() * bombPenalties.length)];
+                    showAlert("💥 폭탄이 터졌습니다!", `<span style='color:red'>${penalty}</span>`, "후보: 1.소주 원샷 / 2.스토리 업뎃 / 3.진실 말하기", "theme-red");
+                    db.ref('bombExplode').set(penalty);
+                    db.ref('bomb').remove();
+                    db.ref('players/' + myId + '/drinkCount').transaction(c => (c || 0) + 1);
+                }
+            } else { alertDiv.style.display = "none"; }
+        });
+
+        db.ref('slotResult').on('value', s => {
+            const result = s.val();
+            if (result) {
+                showAlert("🎰 랜덤게임 결과!", `<span style='color:#2196f3; font-size:30px;'>${result}</span>`, "TV 화면을 확인하세요!", "theme-blue");
+            }
+        });
 
         db.ref('players').on('value', s => {
             const ps = s.val();
-            
-            // 데이터가 아예 없으면 (초기화된 상태)
-            if (!ps) {
-                if(document.getElementById('game').style.display === 'block') {
-                    alert("게임이 초기화되었습니다.");
-                    location.reload();
-                }
-                playerList = [];
-                return;
-            }
-
-            // 플레이어 리스트 갱신 (입장 시간순 정렬)
+            if (!ps) { if(document.getElementById('game').style.display === 'block') { alert("게임 초기화됨"); location.reload(); } return; }
             playerList = Object.keys(ps).map(k=>({key:k, ...ps[k]})).sort((a,b)=>a.time - b.time);
         });
 
@@ -126,13 +128,7 @@
             const tId = s.val();
             const btn = document.getElementById('rollBtn');
             const status = document.getElementById('status');
-            
-            // 턴 정보가 없거나 이상하면, 첫 번째 사람에게 턴 부여 (자동 복구)
-            if((!tId || !playerList.find(p => p.key === tId)) && playerList.length > 0) {
-                db.ref('turn').set(playerList[0].key);
-                return; // 다음 업데이트에서 처리
-            }
-            
+            if((!tId || !playerList.find(p => p.key === tId)) && playerList.length > 0) { db.ref('turn').set(playerList[0].key); return; }
             if (tId === myId) {
                 btn.disabled = false;
                 status.innerText = "🔔 당신의 차례입니다! 굴리세요!";
@@ -146,57 +142,48 @@
             }
         });
 
-        // (나머지 서든데스, 미니게임 알림 코드는 그대로 유지)
-        db.ref('suddenDeath').on('value', s => {
-            const d = s.val();
-            const ov = document.getElementById('alertOverlay');
-            if(d) {
-                document.getElementById('alertTitle').innerText = "🚨 서든데스 발동! 🚨";
-                document.getElementById('alertText').innerText = d.text;
-                ov.style.display = 'flex';
-                if(navigator.vibrate) navigator.vibrate([500,200,500]);
-            } else { ov.style.display = 'none'; }
-        });
-
-        db.ref('miniGameAlert').on('value', s => {
-            const al = s.val();
-            if(al && al[myId]) {
-                document.getElementById('alertTitle').innerText = "⚔️ 미니게임 발동! ⚔️";
-                document.getElementById('alertText').innerText = "같은 칸 라이벌 등장! TV를 보세요!";
-                document.getElementById('alertOverlay').style.display = 'flex';
-                if(navigator.vibrate) navigator.vibrate(500);
-            } else if (!document.getElementById('alertTitle').innerText.includes("서든데스")) {
-                document.getElementById('alertOverlay').style.display = 'none';
-            }
-        });
+        db.ref('suddenDeath').on('value', s => { const d = s.val(); if(d) showAlert("🚨 서든데스 발동!", d.text, "", "theme-red"); });
+        db.ref('miniGameAlert').on('value', s => { const al = s.val(); if(al && al[myId]) showAlert("⚔️ 미니게임 발동!", "TV 화면을 확인하세요!", "라이벌과 대결!", "theme-orange"); });
 
         function roll() {
             const dice = Math.floor(Math.random() * 6) + 1;
             currentPos = (currentPos + dice) % 28;
-            
             let action = "";
-            const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "뒤로 한칸", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
-            
+            const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "💣폭탄 획득", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "💣폭탄 획득(뒤로한칸)", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
             const currentCell = penalties[currentPos];
-
+            if (currentCell.includes("마셔")) db.ref('players/' + myId + '/drinkCount').transaction(c => (c || 0) + 1);
+            if (currentCell.includes("폭탄")) {
+                const totalTimer = playerList.length * 3;
+                db.ref('bomb').set({ owner: myId, timer: totalTimer });
+                showAlert("💣 폭탄 획득!", `3바퀴(${totalTimer}턴) 뒤에 터집니다!`, "", "theme-red");
+                if(currentCell.includes("뒤로")) currentPos = (currentPos - 1 + 28) % 28;
+            } else {
+                db.ref('bomb').transaction(b => { if (b) return { ...b, timer: b.timer - 1 }; return b; });
+            }
             if(currentCell.includes("황금열쇠")) {
                 const key = allKeys[Math.floor(Math.random() * allKeys.length)];
-                action = key; 
+                action = privateKeys.includes(key) ? "SECRET" : key;
                 document.getElementById('storageText').innerText = key;
                 document.getElementById('goldenKeyStorage').style.display = 'block';
             }
-            
             if(currentCell.includes("랜덤게임")) {
                 document.getElementById('randomGameBtnArea').style.display = 'block';
-            } else {
-                document.getElementById('randomGameBtnArea').style.display = 'none';
-            }
-
+                showAlert("🎮 랜덤게임!", "버튼을 눌러 슬롯을 돌리세요!", "", "theme-blue");
+            } else { document.getElementById('randomGameBtnArea').style.display = 'none'; }
             db.ref('players/' + myId).update({ pos: currentPos, action: action });
-            
-            const myIdx = playerList.findIndex(p => p.key === myId);
-            const nextIdx = (myIdx + 1) % playerList.length;
+            const nextIdx = (playerList.findIndex(p => p.key === myId) + 1) % playerList.length;
             db.ref('turn').set(playerList[nextIdx].key);
+        }
+
+        function triggerSlotMachine() { db.ref('slotTrigger').set(true); document.getElementById('randomGameBtnArea').style.display = 'none'; }
+        function showAlert(title, text, subText = "", theme = "") {
+            const overlay = document.getElementById('alertOverlay');
+            overlay.className = theme;
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertText').innerHTML = text;
+            document.getElementById('alertSubText').innerText = subText;
+            overlay.style.display = 'flex';
+            if(navigator.vibrate) navigator.vibrate([500,200,500]);
         }
     </script>
 </body>
