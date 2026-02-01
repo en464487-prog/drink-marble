@@ -112,7 +112,7 @@
         ];
         
         const allKeys = [...privateKeys, ...publicKeys];
-        const bombPenalties = ["🥃 소주 큰 잔에 원샷!", "📸 엽사 찍어 인스타 업뎃!", "🤫 진실 or 창피한 일 말하기"];
+        const bombPenalties = ["🥃 소주 큰 잔에 원샷!", "📸 엽사 톡방에 공유!", "🤫 진실 or 창피한 일 말하기"];
 
         function join(c) {
             const n = document.getElementById('nameInput').value;
@@ -134,7 +134,7 @@
                     <div style="background:rgba(255,255,255,0.9); color:black; padding:10px; border-radius:8px; font-size:14px; text-align:left;">
                         <strong>☠️ 터지면 이 중 하나!</strong><br>
                         1. 🥃 소주 큰 잔 원샷<br>
-                        2. 📸 엽사 인스타 박제<br>
+                        2. 📸 엽사 톡방에 공유<br>
                         3. 🤫 진실 or 쪽팔린 썰
                     </div>
                 `;
@@ -190,7 +190,7 @@
             currentPos = (currentPos + dice) % 28;
             
             let action = "";
-            const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "💣폭탄 획득", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "💣폭탄 획득", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
+            const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "나 뺴고 다 마셔", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "💣폭탄 획득", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
             const currentCell = penalties[currentPos];
 
             // 폭탄 추월 로직
