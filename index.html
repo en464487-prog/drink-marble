@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>주루 마블 - CONTROLLER V18</title>
+    <title>주루 마블 - USER V22 (FINAL)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
@@ -15,49 +15,20 @@
         input, select { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
         .main-btn { width: 100%; padding: 15px; border-radius: 15px; border: none; font-size: 18px; font-weight: bold; color: white; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
         .btn-blue { background: #2196f3; } .btn-red { background: #ff4757; } .btn-gold { background: #f1c40f; color: black; } .btn-purple { background: #8e44ad; } .btn-green { background: #2ed573; }
-        .dice-btn { width: 120px; height: 120px; font-size: 50px; border-radius: 50%; background: linear-gradient(135deg, #ff6b6b, #ee5253); color: white; border: none; box-shadow: 0 10px 20px rgba(238, 82, 83, 0.4); margin: 20px auto; display: block; }
-        .dice-btn:disabled { background: #ccc; box-shadow: none; }
-        
-        /* 오버레이 스타일 */
+        .dice-btn { width: 120px; height: 120px; font-size: 50px; border-radius: 50%; background: linear-gradient(135deg, #ff6b6b, #ee5253); color: white; border: none; box-shadow: 0 10px 20px rgba(238, 82, 83, 0.4); margin: 20px auto; display: block; transition: 0.3s; }
+        .dice-btn:disabled { background: #bdc3c7; box-shadow: none; cursor: not-allowed; opacity: 0.3; transform: scale(0.9); }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .popup { background: white; padding: 25px; border-radius: 25px; width: 100%; max-width: 350px; text-align: center; max-height: 80vh; overflow-y: auto; }
         .player-select-btn { width: 100%; padding: 12px; margin-bottom: 8px; background: #dfe6e9; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; color: #333; }
-        
         #spyPanel { display: none; background: #2d3436; color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 2px solid #00cec9; }
         #reportBtn { position: fixed; top: 10px; right: 10px; background: #d63031; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; z-index: 100; opacity: 0.8; }
     </style>
 </head>
 <body>
     <div id="alertOverlay" class="overlay"><div class="popup"><h2 id="alertTitle"></h2><p id="alertText"></p><button class="main-btn btn-blue" onclick="closeAlert()">확인</button></div></div>
-    
-    <div id="playerSelectOverlay" class="overlay">
-        <div class="popup">
-            <h2 id="selectTitle">대상 선택</h2>
-            <div id="playerListArea"></div>
-            <button class="main-btn btn-red" onclick="closeSelect()">취소</button>
-        </div>
-    </div>
-
-    <div id="ruleInputOverlay" class="overlay">
-        <div class="popup">
-            <h2>📜 새로운 룰 만들기</h2>
-            <input type="text" id="newRuleInput" placeholder="예: 웃으면 한 잔">
-            <button class="main-btn btn-gold" onclick="confirmRule()">선포하기</button>
-            <button class="main-btn btn-red" onclick="document.getElementById('ruleInputOverlay').style.display='none'">취소</button>
-        </div>
-    </div>
-
-    <div id="devilSelectOverlay" class="overlay">
-        <div class="popup">
-            <h2 style="color:#8e44ad">😈 거래 효과 선택</h2>
-            <button class="main-btn btn-blue" onclick="execDevil(1)">1. 1턴 금주 (나)</button>
-            <button class="main-btn btn-red" onclick="execDevil(2)">2. 너 마셔 (5회)</button>
-            <button class="main-btn btn-gold" onclick="execDevil(3)">3. 룰 메이커</button>
-            <button class="main-btn btn-purple" onclick="execDevil(4)">4. 흑기사 지목</button>
-            <p style="font-size:12px; color:#666;">*1턴 내 미사용 시 소멸</p>
-        </div>
-    </div>
-
+    <div id="playerSelectOverlay" class="overlay"><div class="popup"><h2 id="selectTitle">대상 선택</h2><div id="playerListArea"></div><button class="main-btn btn-red" onclick="closeSelect()">취소</button></div></div>
+    <div id="ruleInputOverlay" class="overlay"><div class="popup"><h2>📜 새로운 룰 만들기</h2><input type="text" id="newRuleInput" placeholder="예: 웃으면 한 잔"><button class="main-btn btn-gold" onclick="confirmRule()">선포하기</button><button class="main-btn btn-red" onclick="document.getElementById('ruleInputOverlay').style.display='none'">취소</button></div></div>
+    <div id="devilSelectOverlay" class="overlay"><div class="popup"><h2 style="color:#8e44ad">😈 거래 효과 선택</h2><button class="main-btn btn-blue" onclick="execDevil(1)">1. 1턴 금주 (나)</button><button class="main-btn btn-red" onclick="execDevil(2)">2. 너 마셔 (5회)</button><button class="main-btn btn-gold" onclick="execDevil(3)">3. 룰 메이커</button><button class="main-btn btn-purple" onclick="execDevil(4)">4. 흑기사 지목</button><p style="font-size:12px; color:#666;">*1턴 내 미사용 시 소멸</p></div></div>
     <div id="voteOverlay" class="overlay"><div class="popup"><h2 id="voteTarget">심판의 시간</h2><button class="main-btn btn-green" onclick="castVote('save')">😇 살려준다</button><button class="main-btn btn-red" onclick="castVote('kill')">💀 먹인다</button></div></div>
     <div id="reportOverlay" class="overlay"><div class="popup"><h2>🕵️ 스파이 신고</h2><div id="suspectList"></div><button class="main-btn btn-blue" onclick="closeReport()">취소</button></div></div>
 
@@ -76,11 +47,8 @@
         <div id="spyPanel"><h3>🕵️ 당신은 스파이!</h3><p id="spyMissionText" style="color:#81ecec;"></p><button class="main-btn btn-green" onclick="completeSpy()">✅ 미션 완료</button></div>
         <div id="bombAlert" style="display:none; background:#ffebee; padding:10px; border-radius:10px; border:2px solid red; color:red; margin-bottom:10px;">💣 폭탄 보유 중!</div>
         <h2 id="myInfo"></h2>
-        
         <button id="uDrinkBtn" class="main-btn btn-red" style="display:none;" onclick="initUDrink()">👉 너 마셔! (<span id="uDrinkCount">5</span>)</button>
-
         <div id="goldenKeyStorage" style="display:none; background:#fff9c4; padding:15px; border-radius:15px; margin-bottom:15px;"><p id="storageText" style="font-weight:bold; margin:0;"></p></div>
-        
         <button id="rollBtn" class="dice-btn" onclick="roll()">🎲</button>
         <button id="trialBtn" class="main-btn btn-gold" style="display:none;" onclick="requestTrial()">⚖️ 변론 (1회)</button>
         <h3 id="status" style="color:#777;">대기 중...</h3>
@@ -93,9 +61,11 @@
 
         let myId, myName, myChar, myStudentId, playerList = [];
         let currentPos = 0, consecutiveDrinks = 0, devilEffect = null, uDrinkLeft = 0;
-        
+        let currentTurnId = null;
+
         const privateKeys = ["🛡️ 무적 방어권", "🔫 저격수", "👻 물귀신", "🎲 더블", "🔄 반사", "🤫 흑기사"];
         const publicKeys = ["📜 훈민정음", "🌊 파도타기", "🗣️ 야자타임", "📵 폰 금지", "❤️ 러브샷"];
+        const bombPenalties = ["🥃 소주 원샷", "📸 엽사 박제", "🤫 비밀 폭로", "💃 무반주 댄스"];
         let selectedChar = "";
         function selChar(c) { selectedChar = c; document.querySelectorAll('.char-btn').forEach(b=>b.classList.remove('selected')); event.target.classList.add('selected'); }
 
@@ -113,32 +83,37 @@
         db.ref('players').on('value', s => {
             const ps = s.val(); if(!ps) return;
             playerList = Object.keys(ps).map(k=>({key:k, ...ps[k]})).sort((a,b)=>a.time - b.time);
+            
             const me = ps[myId];
             if(me && me.isSpy) { document.getElementById('spyPanel').style.display='block'; document.getElementById('spyMissionText').innerText=me.spyMission; document.getElementById('reportBtn').style.display='none'; }
             else { document.getElementById('spyPanel').style.display='none'; document.getElementById('reportBtn').style.display='block'; }
-
-            // ★ [보강] 스파이 성공/검거 시 전체 알림 및 자동 음주 처리
+            
             Object.values(ps).forEach(p => {
-                if(p.spySuccess) {
-                    // 스파이가 성공함 -> 나는 스파이가 아니라면 마신다
-                    if(!me.isSpy) {
-                        if(!localStorage.getItem('spy_punished_' + p.time)) { // 중복 음주 방지
-                            db.ref('players/' + myId + '/drinkCount').transaction(c=>(c||0)+1);
-                            showAlert("🕵️ 스파이 성공!", `${p.name}님이 미션을 완료했습니다.<br>나머지 전원 1잔!`, "", "theme-red");
-                            localStorage.setItem('spy_punished_' + p.time, 'yes'); // 처리 완료 표시
-                        }
-                    }
-                }
-                if(p.spyCaught) {
-                    // 스파이가 잡힘 -> 스파이 본인만 마심 (이미 report에서 처리됨, 여기선 알림만)
-                    if(me.isSpy) { // 내가 스파이였다면
-                         showAlert("👮 검거됨!", "당신은 발각되었습니다. 벌주 1잔!", "", "theme-red");
-                    }
+                if(p.spySuccess && !me.isSpy && !localStorage.getItem('spy_' + p.time)) {
+                    db.ref('players/' + myId + '/drinkCount').transaction(c=>(c||0)+1);
+                    showAlert("🕵️ 스파이 성공!", `${p.name}님이 미션을 완료했습니다.<br>전원 1잔!`, "", "theme-red");
+                    localStorage.setItem('spy_' + p.time, 'yes');
                 }
             });
         });
 
-        // 지목 알림 (개인 폰)
+        db.ref('turn').on('value', s => {
+            currentTurnId = s.val();
+            const btn = document.getElementById('rollBtn');
+            const status = document.getElementById('status');
+            
+            if(currentTurnId === myId) {
+                btn.disabled = false;
+                status.innerText = "🔔 당신 차례입니다!";
+                status.style.color = "#ff4757";
+            } else {
+                btn.disabled = true;
+                const turnOwner = playerList.find(p => p.key === currentTurnId);
+                status.innerText = (turnOwner ? turnOwner.name : "상대") + "님이 진행 중...";
+                status.style.color = "#ccc";
+            }
+        });
+
         db.ref('devilTarget').on('value', s => {
             const t = s.val();
             if(t && t.targetKey === myId) {
@@ -147,166 +122,75 @@
             }
         });
 
-        // 플레이어 선택 UI
-        function openPlayerSelect(title, callbackName) {
-            document.getElementById('selectTitle').innerText = title;
-            const area = document.getElementById('playerListArea'); area.innerHTML = "";
-            playerList.forEach(p => { if(p.key !== myId) area.innerHTML += `<button class="player-select-btn" onclick="${callbackName}('${p.key}', '${p.name}')">${p.name}</button>`; });
-            document.getElementById('playerSelectOverlay').style.display = 'flex';
-        }
-        function closeSelect() { document.getElementById('playerSelectOverlay').style.display = 'none'; }
-
-        // 악마의 거래 로직
-        function triggerDevilDeal() { document.getElementById('devilSelectOverlay').style.display = 'flex'; }
-        function execDevil(type) {
-            document.getElementById('devilSelectOverlay').style.display = 'none';
-            if(type === 1) { // 1턴 금주
-                devilEffect = "no_drink";
-                db.ref('devilDeal').set({ type: 'SELF', user: myName, effect: "이번 턴 절대 금주 선언!" });
-                alert("이번 턴 무적입니다.");
-            } else if(type === 2) { // 너 마셔 5회
-                uDrinkLeft = 5;
-                document.getElementById('uDrinkBtn').style.display = 'block';
-                document.getElementById('uDrinkCount').innerText = 5;
-                db.ref('devilDeal').set({ type: 'SELF', user: myName, effect: "👉 '너 마셔' 권한(5회) 획득!" });
-            } else if(type === 3) { // 룰 메이커
-                document.getElementById('ruleInputOverlay').style.display = 'flex';
-            } else if(type === 4) { // 흑기사
-                openPlayerSelect("대신 마실 사람 지목", "confirmSubstitute");
-            }
-        }
-
-        // 룰 메이커
-        function confirmRule() {
-            const rule = document.getElementById('newRuleInput').value;
-            if(!rule) return alert("내용 입력!");
-            db.ref('activeRule').set(rule);
-            db.ref('devilDeal').set({ type: 'RULE', user: myName, content: rule });
-            document.getElementById('ruleInputOverlay').style.display = 'none';
-        }
-
-        // 흑기사 지목
-        function confirmSubstitute(key, name) {
-            db.ref('substituteDrinker').set({ from: myId, to: key });
-            db.ref('devilDeal').set({ type: 'TARGET', user: myName, target: name, effect: "대리 음주자로 지명됨" });
-            db.ref('devilTarget').set({ targetKey: key, sender: myName, msg: "흑기사로 지목되었습니다." });
-            closeSelect();
-        }
-
-        // 너 마셔 사용
-        function initUDrink() { if(uDrinkLeft > 0) openPlayerSelect("먹일 사람 선택", "confirmUDrink"); }
-        function confirmUDrink(key, name) {
-            db.ref('players/'+key+'/drinkCount').transaction(c=>(c||0)+1);
-            uDrinkLeft--;
-            document.getElementById('uDrinkCount').innerText = uDrinkLeft;
-            if(uDrinkLeft === 0) document.getElementById('uDrinkBtn').style.display = 'none';
-            
-            // ★ [보강] TV에도 알림 전송 + 타겟 폰에도 알림
-            db.ref('devilDeal').set({ type: 'TARGET', user: myName, target: name, effect: "👉 너 마셔! 공격 시전 (1잔)" });
-            db.ref('devilTarget').set({ targetKey: key, sender: myName, msg: "지목 당했습니다. 1잔 마시세요!" });
-            
-            alert(name + "에게 먹였습니다!");
-            closeSelect();
-        }
-
-        // 스파이 로직
-        function completeSpy() {
-            db.ref('players/' + myId + '/spySuccess').set(true); // 전체 알림 트리거
-            db.ref('players/' + myId).update({ isSpy: false, spyMission: null });
-            alert("미션 성공! 나 빼고 다 마십니다 ^^");
-        }
-        function openReport() {
-            const list = document.getElementById('suspectList'); list.innerHTML = "";
-            playerList.forEach(p => { if(p.key !== myId) list.innerHTML += `<button class="main-btn btn-blue" onclick="doReport('${p.key}')">${p.name}</button>`; });
-            document.getElementById('reportOverlay').style.display = 'flex';
-        }
-        function doReport(k) {
-            const t = playerList.find(p => p.key === k);
-            if(t.isSpy) {
-                db.ref('players/' + k + '/spyCaught').set(true);
-                db.ref('players/' + k).update({ isSpy: false, spyMission: null });
-                db.ref('players/' + k + '/drinkCount').transaction(c => (c||0)+1); // 스파이 벌주
-                alert("검거 성공!");
-            } else {
-                db.ref('players/' + myId + '/drinkCount').transaction(c => (c||0)+1); // 무고 벌주
-                alert("틀렸습니다! 당신이 마십니다.");
-            }
-            closeReport();
-        }
-        function closeReport() { document.getElementById('reportOverlay').style.display='none'; }
-
-        // 주사위 및 게임 로직
         function roll() {
-            // 1턴 제한: 미사용 너 마셔 버튼 제거
-            if(uDrinkLeft > 0 && document.getElementById('uDrinkBtn').style.display === 'block') {
-                document.getElementById('uDrinkBtn').style.display = 'none';
-                uDrinkLeft = 0;
-            }
-            // 1턴 제한: 금주 효과 해제 (사용 후 다음 턴이 오면 해제) - 여기서 리셋하면 효과 못 봄. 
-            // 로직 수정: 마셔야 할 때 효과 체크 후 리셋하는 방식 (아래에 구현됨)
+            if(currentTurnId !== myId) return alert("당신의 차례가 아닙니다!");
 
+            if(uDrinkLeft > 0 && document.getElementById('uDrinkBtn').style.display === 'block') { document.getElementById('uDrinkBtn').style.display = 'none'; uDrinkLeft = 0; }
+            
             let dice = Math.floor(Math.random() * 6) + 1;
             const minDrink = Math.min(...playerList.map(p => p.drinkCount || 0));
             const myDrink = playerList.find(p=>p.key===myId).drinkCount || 0;
             
-            // 밸런스 로직
             if((consecutiveDrinks >= 3 || myDrink > minDrink + 10)) {
                  const badKeywords = ["마셔", "폭탄"];
                  const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "💣폭탄 획득", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "💣폭탄 획득", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
                  for(let i=0; i<5; i++) {
                     let tempPos = (currentPos + dice) % 28;
-                    if(badKeywords.some(bad => penalties[tempPos].includes(bad))) dice = Math.floor(Math.random() * 6) + 1;
-                    else break;
+                    if(badKeywords.some(bad => penalties[tempPos].includes(bad))) dice = Math.floor(Math.random() * 6) + 1; else break;
                 }
-                showAlert("⚖️ 밸런스 보호", "시스템이 당신을 돕습니다.", "", "theme-blue");
-                consecutiveDrinks = 0;
+                showAlert("⚖️ 밸런스 보호", "시스템이 당신을 돕습니다.", "", "theme-blue"); consecutiveDrinks = 0;
             }
 
             const oldPos = currentPos;
             currentPos = (currentPos + dice) % 28;
+
+            db.ref('bomb').once('value', s => {
+                const b = s.val();
+                if (b) {
+                    const newTimer = b.timer - 1;
+                    if(newTimer <= 0) {
+                        const p = bombPenalties[Math.floor(Math.random() * bombPenalties.length)];
+                        db.ref('bombExplode').set(p); 
+                        db.ref('bomb').remove(); 
+                        return;
+                    } else {
+                        db.ref('bomb/timer').set(newTimer);
+                    }
+
+                    if (b.owner === myId) {
+                        let lastVictim = null;
+                        for (let i = 1; i <= dice; i++) {
+                            const checkPos = (oldPos + i) % 28;
+                            const targets = playerList.filter(p => p.pos === checkPos && p.key !== myId);
+                            if (targets.length > 0) lastVictim = targets[0];
+                        }
+                        if (lastVictim) {
+                            db.ref('bomb/owner').set(lastVictim.key); 
+                            showAlert("💣 폭탄 배달!", `${lastVictim.name}님께 폭탄을 넘겼습니다!`, "", "theme-blue");
+                        }
+                    }
+                }
+            });
+
             const penalties = ["시작!", "한잔 마셔", "옆사람 마셔", "💣폭탄 획득", "🎮랜덤게임", "패스~", "챌린지 노래추기", "21학번 마셔", "두잔 마셔", "모두 마셔", "한 턴 할머니", "🗝️황금열쇠", "💣폭탄 획득", "누구 마셔", "옆사람 마셔", "나만 빼고 마셔", "너만 빼고 마셔", "23학번 마셔", "🗝️황금열쇠", "🎮랜덤게임", "패스~", "벌주 마셔~", "한 턴 고양이", "같이 마셔~", "모두 마셔", "🗝️황금열쇠", "한 잔 마셔", "도착기념 마셔~"];
             const currentCell = penalties[currentPos];
             let action = "";
+
+            if (currentCell.includes("폭탄")) { db.ref('bomb').set({ owner: myId, timer: playerList.length * 3 }); showAlert("💣 폭탄 획득!", "시한폭탄 작동!", "", "theme-red"); }
 
             if (currentCell.includes("마셔")) {
                 let shouldDrink = true;
                 if(currentCell.includes("21학번") && myStudentId !== '21') shouldDrink = false;
                 if(currentCell.includes("23학번") && myStudentId !== '23') shouldDrink = false;
-                
-                // 금주 효과 체크 (1회용)
                 if(devilEffect === "no_drink") { shouldDrink = false; devilEffect = null; showAlert("😈 금주 효과", "술을 마시지 않습니다.", "", "theme-purple"); }
-
                 if(shouldDrink) {
                     db.ref('substituteDrinker').once('value', s => {
                         const sub = s.val();
-                        if(sub && sub.from === myId) { // 내가 흑기사를 썼다면
-                            db.ref('players/' + sub.to + '/drinkCount').transaction(c => (c||0)+1); // 그 사람이 마심
-                            alert("대리 음주자가 대신 마십니다!");
-                            db.ref('substituteDrinker').remove();
-                        } else {
-                            db.ref('players/' + myId + '/drinkCount').transaction(c => (c || 0) + 1);
-                            consecutiveDrinks++;
-                            document.getElementById('trialBtn').style.display = 'block';
-                        }
+                        if(sub && sub.from === myId) { db.ref('players/' + sub.to + '/drinkCount').transaction(c => (c||0)+1); alert("대리 음주자가 대신 마십니다!"); db.ref('substituteDrinker').remove(); } 
+                        else { db.ref('players/' + myId + '/drinkCount').transaction(c => (c || 0) + 1); consecutiveDrinks++; document.getElementById('trialBtn').style.display = 'block'; }
                     });
                 } else { consecutiveDrinks = 0; }
             } else { consecutiveDrinks = 0; document.getElementById('trialBtn').style.display = 'none'; }
-
-            // 폭탄 추월
-            db.ref('bomb').once('value', s => {
-                const b = s.val();
-                if (b && b.owner === myId) {
-                    let victim = null;
-                    for (let i = 1; i <= dice; i++) {
-                        const targets = playerList.filter(p => p.pos === (oldPos + i) % 28 && p.key !== myId);
-                        if (targets.length > 0) victim = targets[0];
-                    }
-                    if (victim) { db.ref('bomb/owner').set(victim.key); showAlert("💣 폭탄 배달!", `${victim.name}님께 넘겼습니다!`, "", "theme-blue"); }
-                }
-            });
-
-            if (currentCell.includes("폭탄")) { db.ref('bomb').set({ owner: myId, timer: playerList.length * 3 }); showAlert("💣 폭탄 획득!", "시한폭탄 작동!", "", "theme-red"); } 
-            else db.ref('bomb').transaction(b => b ? { ...b, timer: b.timer - 1 } : b);
 
             if(currentCell.includes("황금열쇠")) {
                 if(Math.random() < 0.2) triggerDevilDeal();
@@ -324,11 +208,21 @@
             db.ref('turn').set(playerList[nextIdx].key);
         }
 
-        // 최후의 변론
+        function openPlayerSelect(title, callbackName) { document.getElementById('selectTitle').innerText = title; const area = document.getElementById('playerListArea'); area.innerHTML = ""; playerList.forEach(p => { if(p.key !== myId) area.innerHTML += `<button class="player-select-btn" onclick="${callbackName}('${p.key}', '${p.name}')">${p.name}</button>`; }); document.getElementById('playerSelectOverlay').style.display = 'flex'; }
+        function closeSelect() { document.getElementById('playerSelectOverlay').style.display = 'none'; }
+        function triggerDevilDeal() { document.getElementById('devilSelectOverlay').style.display = 'flex'; }
+        function execDevil(type) { document.getElementById('devilSelectOverlay').style.display = 'none'; if(type === 1) { devilEffect = "no_drink"; db.ref('devilDeal').set({ type: 'SELF', user: myName, effect: "이번 턴 절대 금주 선언!" }); alert("이번 턴 무적입니다."); } else if(type === 2) { uDrinkLeft = 5; document.getElementById('uDrinkBtn').style.display = 'block'; document.getElementById('uDrinkCount').innerText = 5; db.ref('devilDeal').set({ type: 'SELF', user: myName, effect: "👉 '너 마셔' 권한(5회) 획득!" }); } else if(type === 3) { document.getElementById('ruleInputOverlay').style.display = 'flex'; } else if(type === 4) { openPlayerSelect("대신 마실 사람 지목", "confirmSubstitute"); } }
+        function confirmRule() { const rule = document.getElementById('newRuleInput').value; if(!rule) return alert("내용 입력!"); db.ref('activeRule').set(rule); db.ref('devilDeal').set({ type: 'RULE', user: myName, content: rule }); document.getElementById('ruleInputOverlay').style.display = 'none'; }
+        function confirmSubstitute(key, name) { db.ref('substituteDrinker').set({ from: myId, to: key }); db.ref('devilDeal').set({ type: 'TARGET', user: myName, target: name, effect: "대리 음주자로 지명됨" }); db.ref('devilTarget').set({ targetKey: key, sender: myName, msg: "흑기사로 지목되었습니다." }); closeSelect(); }
+        function initUDrink() { if(uDrinkLeft > 0) openPlayerSelect("먹일 사람 선택", "confirmUDrink"); }
+        function confirmUDrink(key, name) { db.ref('players/'+key+'/drinkCount').transaction(c=>(c||0)+1); uDrinkLeft--; document.getElementById('uDrinkCount').innerText = uDrinkLeft; if(uDrinkLeft === 0) document.getElementById('uDrinkBtn').style.display = 'none'; db.ref('devilDeal').set({ type: 'TARGET', user: myName, target: name, effect: "👉 너 마셔! 공격 시전 (1잔)" }); db.ref('devilTarget').set({ targetKey: key, sender: myName, msg: "지목 당했습니다. 1잔 마시세요!" }); alert(name + "에게 먹였습니다!"); closeSelect(); }
+        function completeSpy() { db.ref('players/' + myId + '/spySuccess').set(true); db.ref('players/' + myId).update({ isSpy: false, spyMission: null }); alert("미션 성공! 나 빼고 다 마십니다 ^^"); }
+        function openReport() { const list = document.getElementById('suspectList'); list.innerHTML = ""; playerList.forEach(p => { if(p.key !== myId) list.innerHTML += `<button class="main-btn btn-blue" onclick="doReport('${p.key}')">${p.name}</button>`; }); document.getElementById('reportOverlay').style.display = 'flex'; }
+        function doReport(k) { const t = playerList.find(p => p.key === k); if(t.isSpy) { db.ref('players/' + k + '/spyCaught').set(true); db.ref('players/' + k).update({ isSpy: false, spyMission: null }); db.ref('players/' + k + '/drinkCount').transaction(c => (c||0)+1); alert("검거 성공!"); } else { db.ref('players/' + myId + '/drinkCount').transaction(c => (c||0)+1); alert("틀렸습니다! 당신이 마십니다."); } closeReport(); }
+        function closeReport() { document.getElementById('reportOverlay').style.display='none'; }
         function requestTrial() { db.ref('currentTrial').set({ defender: myId, name: myName }); db.ref('votes').remove(); document.getElementById('trialBtn').style.display = 'none'; }
-        db.ref('currentTrial').on('value', s => { const t = s.val(); if(t && t.defender !== myId) document.getElementById('voteOverlay').style.display = 'flex'; else document.getElementById('voteOverlay').style.display = 'none'; });
         function castVote(type) { db.ref('votes/' + myId).set(type); document.getElementById('voteOverlay').style.display = 'none'; }
-        
+        db.ref('currentTrial').on('value', s => { const t = s.val(); if(t && t.defender !== myId) document.getElementById('voteOverlay').style.display = 'flex'; else document.getElementById('voteOverlay').style.display = 'none'; });
         function showAlert(t, tx, st, th) { document.getElementById('alertTitle').innerText = t; document.getElementById('alertText').innerHTML = tx; document.getElementById('alertOverlay').style.display = 'flex'; }
         function closeAlert() { document.getElementById('alertOverlay').style.display = 'none'; }
     </script>
