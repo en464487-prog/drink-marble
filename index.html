@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>주루 마블 - USER V22 (FINAL)</title>
+    <title>주루 마블 - USER FINAL</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
@@ -101,7 +101,6 @@
             currentTurnId = s.val();
             const btn = document.getElementById('rollBtn');
             const status = document.getElementById('status');
-            
             if(currentTurnId === myId) {
                 btn.disabled = false;
                 status.innerText = "🔔 당신 차례입니다!";
@@ -128,7 +127,9 @@
             if(uDrinkLeft > 0 && document.getElementById('uDrinkBtn').style.display === 'block') { document.getElementById('uDrinkBtn').style.display = 'none'; uDrinkLeft = 0; }
             
             let dice = Math.floor(Math.random() * 6) + 1;
-            const minDrink = Math.min(...playerList.map(p => p.drinkCount || 0));
+            const drinks = playerList.map(p => p.drinkCount || 0);
+            const minDrink = Math.min(...drinks);
+            const maxDrink = Math.max(...drinks);
             const myDrink = playerList.find(p=>p.key===myId).drinkCount || 0;
             
             if((consecutiveDrinks >= 3 || myDrink > minDrink + 10)) {
@@ -193,9 +194,12 @@
             } else { consecutiveDrinks = 0; document.getElementById('trialBtn').style.display = 'none'; }
 
             if(currentCell.includes("황금열쇠")) {
-                if(Math.random() < 0.2) triggerDevilDeal();
-                else {
+                // ★ 악마의 거래 조건 (1등 & 꼴등과 10잔 차)
+                if (myDrink === maxDrink && (maxDrink - minDrink >= 10)) {
+                    triggerDevilDeal();
+                } else {
                     const key = [...privateKeys, ...publicKeys][Math.floor(Math.random() * (privateKeys.length + publicKeys.length))];
+                    // ★ 개인 카드는 SECRET으로 전송
                     action = privateKeys.includes(key) ? "SECRET" : key;
                     document.getElementById('storageText').innerText = key;
                     document.getElementById('goldenKeyStorage').style.display = 'block';
